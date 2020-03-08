@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'delay_reporter_lm
+
+  Sample SAM Template for delay_reporter_lm
+
+  '
+Globals:
+  Function:
+    Timeout: 5
+Resources:
+  DelayListFetcher:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: DelayListFetcher
+      Handler: handler
+      FunctionName: DelayListFetcher
+      Runtime: go1.x
+      Tracing: Active
+      Events:
+        CatchAll:
+          Type: Schedule
+          Properties:
+            Schedule: rate(30 minutes)
+            Name: thirty-min-rule
+            Description: Fetch Delay-list each thirty-min
+            Enabled: true
+      Environment:
+        Variables:
+          PARAM1: VALUE
+Outputs:
+  DelayListFetcher:
+    Description: First Lambda Function ARN
+    Value:
+      Fn::GetAtt:
+      - HelloWorldFunction
+      - Arn
+  DelayListFetcherIamRole:
+    Description: Implicit IAM Role created for Hello World function
+    Value:
+      Fn::GetAtt:
+      - HelloWorldFunctionRole
+      - Arn
