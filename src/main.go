@@ -1,15 +1,10 @@
 package main
 
 import (
-	"log"
-
+	"github.com/RyuseiNomi/delay_reporter_lm/src/handler"
 	"github.com/aws/aws-lambda-go/lambda"
 )
 
-func handler() {
-	log.Print("Hoge")
-}
-
 func main() {
-	lambda.Start(handler)
+	lambda.Start(handler.Handler)
 }
