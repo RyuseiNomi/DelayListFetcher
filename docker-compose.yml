@@ -1,0 +1,15 @@
+version: "2"
+services:
+  minio:
+    image: minio/minio
+    ports:
+      - "9000:9000"
+    command: [server, /data]
+    environment:
+      - "MINIO_ACCESS_KEY=dummydummydummy"
+      - "MINIO_SECRET_KEY=dummydummydummy"
+    restart: always
+networks:
+  default:
+    external:
+      name: delay_list_fetcher_network
