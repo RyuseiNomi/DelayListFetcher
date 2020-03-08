@@ -11,6 +11,11 @@ var (
 )
 
 func Handler() {
+	delayList := getDelayList()
+	log.Printf(delayList)
+}
+
+func getDelayList() string {
 	resp, err := http.Get(url)
 	if err != nil {
 		log.Printf("Can not get delay list! Error: %v", err)
@@ -18,5 +23,5 @@ func Handler() {
 	defer resp.Body.Close()
 
 	byteArray, _ := ioutil.ReadAll(resp.Body)
-	log.Printf(string(byteArray))
+	return string(byteArray)
 }
