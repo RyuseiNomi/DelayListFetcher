@@ -14,31 +14,17 @@ Resources:
     Properties:
       CodeUri: DelayListFetcher
       Handler: handler
+      FunctionName: DelayListFetcher
       Runtime: go1.x
       Tracing: Active
       Events:
         CatchAll:
-          Type: Api
+          Type: Schedule
           Properties:
-            Path: /hello
-            Method: GET
+            Schedule: rate(30 minutes)
+            Name: thirty-min-rule
+            Description: Fetch Delay-list each thirty-min
+            Enabled: true
       Environment:
         Variables:
           PARAM1: VALUE
-Outputs:
-  HelloWorldAPI:
-    Description: API Gateway endpoint URL for Prod environment for First Function
-    Value:
-      Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/
-  HelloWorldFunction:
-    Description: First Lambda Function ARN
-    Value:
-      Fn::GetAtt:
-      - HelloWorldFunction
-      - Arn
-  HelloWorldFunctionIamRole:
-    Description: Implicit IAM Role created for Hello World function
-    Value:
-      Fn::GetAtt:
-      - HelloWorldFunctionRole
-      - Arn
