@@ -10,7 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 )
 
 var (
@@ -23,20 +23,20 @@ var (
 func Handler() {
 	delayList := getDelayList()
 
-	if err = createJSON(delayList); err != nil {
-		log.Printf(err)
+	if err := createJSON(delayList); err != nil {
+		fmt.Errorf("Create JSON Error: %s", err)
 	}
 
 	// S3接続インスタンスの生成
 	credential := credentials.NewStaticCredentials("dummydummydummy", "dummydummydummy", "")
-	session, err := session.NewSession(&aws.Config{
+	sess, err := session.NewSession(&aws.Config{
 		Credentials: credential,
 		Region:      aws.String("ap-notheast-1"),
 	})
-	svc := s3.New(session)
+	//svc := s3.New(session)
 
-	if err = uploadJSON(session); err != nil {
-		log.Printf(err)
+	if err := uploadJSON(sess); err != nil {
+		fmt.Errorf("Upload JSON Error: %s", err)
 	}
 
 	log.Printf("Success to upload delay list")
@@ -63,7 +63,7 @@ func createJSON(delayList []byte) error {
 		return fmt.Errorf("create JSON error: %s", "nil bytes was given")
 	}
 
-	if err := os.MkdirAll(tempDir); err != nil {
+	if err := os.MkdirAll(tempDir, 0777); err != nil {
 		return err
 	}
 
@@ -72,30 +72,28 @@ func createJSON(delayList []byte) error {
 		return err
 	}
 
-	_, err := file.Write(delayList)
-	if err != nil {
-		return err
-	}
+	file.Write(delayList)
 
 	return nil
 }
 
-func uploadJSON(session *Session) error {
+func uploadJSON(sess *session) error {
 	jsonFile, err := os.Open(tempDir)
 	if err != nil {
 		fmt.Errorf("upload JSON error: %s", err)
 	}
 	defer jsonFile.Close()
 
-	uploader := s3manager.NeweUploader(session)
-	_, err := uploader.Upload(&s3manager.UploadInput{
+	uploader := s3manager.NewUploader(sess)
+	_, err = uploader.Upload(&s3manager.UploadInput{
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(key),
 		Body:   jsonFile,
 	})
 
 	if err != nil {
-		return error
+		return err
 	}
 
+	return nil
 }
