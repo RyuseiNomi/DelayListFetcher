@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -20,6 +21,9 @@ var (
 	key        = "delay-list.json"
 )
 
+/**
+ * Lambda関数の入り口となる関数
+ */
 func Handler() {
 	delayList := getDelayList()
 
@@ -27,21 +31,38 @@ func Handler() {
 		fmt.Errorf("Create JSON Error: %s", err)
 	}
 
+	jsonFile, err := os.Open(tempDir)
+	defer jsonFile.Close()
+	if err != nil {
+		fmt.Errorf("Upload JSON Error: %s", err)
+	}
+
 	// S3接続インスタンスの生成
 	credential := credentials.NewStaticCredentials("dummydummydummy", "dummydummydummy", "")
 	sess, err := session.NewSession(&aws.Config{
-		Credentials: credential,
-		Region:      aws.String("ap-notheast-1"),
+		Credentials:      credential,
+		Endpoint:         aws.String("http://localhost:9000"),
+		Region:           aws.String("ap-notheast-1"),
+		DisableSSL:       aws.Bool(true),
+		S3ForcePathStyle: aws.Bool(true),
 	})
-	//svc := s3.New(session)
+	uploader := s3manager.NewUploader(sess)
 
-	if err := uploadJSON(sess); err != nil {
+	_, err = uploader.Upload(&s3manager.UploadInput{
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(key),
+		Body:   jsonFile,
+	})
+	if err != nil {
 		fmt.Errorf("Upload JSON Error: %s", err)
 	}
 
 	log.Printf("Success to upload delay list")
 }
 
+/**
+ * 鉄道遅延情報提供ページより遅延リストを取得
+ */
 func getDelayList() []byte {
 	resp, err := http.Get(url)
 	if err != nil {
@@ -54,16 +75,22 @@ func getDelayList() []byte {
 	return delayList
 }
 
+/**
+ * 既にS3に上がっている遅延リストを削除
+ */
 func deleteExistFile() {
 	//TODO 既存のJSONを削除する処理の実装
 }
 
+/**
+ * tempディレクトリにJSONファイルを作成し、遅延リストを書き込む
+ */
 func createJSON(delayList []byte) error {
 	if delayList == nil {
 		return fmt.Errorf("create JSON error: %s", "nil bytes was given")
 	}
 
-	if err := os.MkdirAll(tempDir, 0777); err != nil {
+	if err := os.MkdirAll(filepath.Dir(tempDir), 0777); err != nil {
 		return err
 	}
 
@@ -72,28 +99,20 @@ func createJSON(delayList []byte) error {
 		return err
 	}
 
-	file.Write(delayList)
-
-	return nil
-}
-
-func uploadJSON(sess *session) error {
-	jsonFile, err := os.Open(tempDir)
-	if err != nil {
-		fmt.Errorf("upload JSON error: %s", err)
-	}
-	defer jsonFile.Close()
-
-	uploader := s3manager.NewUploader(sess)
-	_, err = uploader.Upload(&s3manager.UploadInput{
-		Bucket: aws.String(bucketName),
-		Key:    aws.String(key),
-		Body:   jsonFile,
-	})
-
+	_, err = file.Write(delayList)
 	if err != nil {
 		return err
 	}
 
+	//ファイルの存在確認
+	if isExist := isExistTempFile(tempDir); isExist != true {
+		return fmt.Errorf("Temp file does not exist")
+	}
+
 	return nil
+}
+
+func isExistTempFile(tempFile string) bool {
+	_, err := os.Stat(tempFile)
+	return !os.IsNotExist(err)
 }
