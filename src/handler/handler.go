@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -16,7 +15,7 @@ import (
 
 var (
 	url        = "https://tetsudo.rti-giken.jp/free/delay.json"
-	tempDir    = "/temp/json/delay-list.json"
+	tempDir    = "/tmp/json/"
 	bucketName = "delay-list"
 	key        = "delay-list.json"
 )
@@ -28,35 +27,35 @@ func Handler() {
 	delayList := getDelayList()
 
 	if err := createJSON(delayList); err != nil {
-		fmt.Errorf("Create JSON Error: %s", err)
+		log.Fatal("Create JSON Error:  %+v\n", err)
 	}
 
-	jsonFile, err := os.Open(tempDir)
-	defer jsonFile.Close()
+	jsonFile, err := os.OpenFile("/tmp/json/delay-list.json", os.O_CREATE, 0777)
 	if err != nil {
-		fmt.Errorf("Upload JSON Error: %s", err)
+		log.Fatal("Open JSON File Error:  %+v\n", err)
 	}
+	defer jsonFile.Close()
 
 	// S3接続インスタンスの生成
 	credential := credentials.NewStaticCredentials("dummydummydummy", "dummydummydummy", "")
-	sess, err := session.NewSession(&aws.Config{
+	sess := session.Must(session.NewSession(&aws.Config{
 		Credentials:      credential,
-		Endpoint:         aws.String("http://localhost:9000"),
-		Region:           aws.String("ap-notheast-1"),
-		DisableSSL:       aws.Bool(true),
+		Endpoint:         aws.String("http://172.18.0.2:9000"),
 		S3ForcePathStyle: aws.Bool(true),
-	})
-	uploader := s3manager.NewUploader(sess)
+	}))
 
-	_, err = uploader.Upload(&s3manager.UploadInput{
+	// ファイルのアップロード
+	uploader := s3manager.NewUploader(sess)
+	uploadResp, err := uploader.Upload(&s3manager.UploadInput{
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(key),
 		Body:   jsonFile,
 	})
 	if err != nil {
-		fmt.Errorf("Upload JSON Error: %s", err)
+		log.Fatal("(File Upload Error:  %+v\n", err)
 	}
 
+	log.Printf("(%%#v) %+v\n", uploadResp)
 	log.Printf("Success to upload delay list")
 }
 
@@ -66,12 +65,13 @@ func Handler() {
 func getDelayList() []byte {
 	resp, err := http.Get(url)
 	if err != nil {
-		log.Printf("Can not get delay list! Error: %v", err)
+		log.Fatal("Can not get delay list! Error: %v", err)
 	}
 	defer resp.Body.Close()
 
 	delayList, _ := ioutil.ReadAll(resp.Body)
 
+	log.Printf("Succeeded to get Delay-list!")
 	return delayList
 }
 
@@ -90,11 +90,11 @@ func createJSON(delayList []byte) error {
 		return fmt.Errorf("create JSON error: %s", "nil bytes was given")
 	}
 
-	if err := os.MkdirAll(filepath.Dir(tempDir), 0777); err != nil {
+	if err := os.MkdirAll(tempDir, 0777); err != nil {
 		return err
 	}
 
-	file, err := os.Create(tempDir)
+	file, err := os.Create(tempDir + key)
 	if err != nil {
 		return err
 	}

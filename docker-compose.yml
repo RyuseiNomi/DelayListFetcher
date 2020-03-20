@@ -8,6 +8,7 @@ services:
     environment:
       - "MINIO_ACCESS_KEY=dummydummydummy"
       - "MINIO_SECRET_KEY=dummydummydummy"
+      - "MINIO_REGION=ap-northeast-1"
     restart: always
 networks:
   default:
