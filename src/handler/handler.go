@@ -46,7 +46,7 @@ func Handler() {
 
 	// ファイルのアップロード
 	uploader := s3manager.NewUploader(sess)
-	uploadResp, err := uploader.Upload(&s3manager.UploadInput{
+	_, err = uploader.Upload(&s3manager.UploadInput{
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(key),
 		Body:   jsonFile,
@@ -55,7 +55,6 @@ func Handler() {
 		log.Fatal("(File Upload Error:  %+v\n", err)
 	}
 
-	log.Printf("(%%#v) %+v\n", uploadResp)
 	log.Printf("Success to upload delay list")
 }
 
@@ -73,13 +72,6 @@ func getDelayList() []byte {
 
 	log.Printf("Succeeded to get Delay-list!")
 	return delayList
-}
-
-/**
- * 既にS3に上がっている遅延リストを削除
- */
-func deleteExistFile() {
-	//TODO 既存のJSONを削除する処理の実装
 }
 
 /**
