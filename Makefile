@@ -16,4 +16,5 @@ exec-dev:
 	sam build; sam local invoke DelayListFetcher \
 		--region ap-northeast-1 \
 		--docker-network delay_list_fetcher_network \
-		--skip-pull-image
+		--skip-pull-image \
+		--profile minio_test

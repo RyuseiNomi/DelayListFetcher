@@ -14,10 +14,12 @@ import (
 )
 
 var (
-	url        = "https://tetsudo.rti-giken.jp/free/delay.json"
-	tempDir    = "/tmp/json/"
-	bucketName = "delay-list"
-	key        = "delay-list.json"
+	url               = "https://tetsudo.rti-giken.jp/free/delay.json"
+	tempDir           = "/tmp/json/"
+	bucketName        = "delay-list"
+	key               = "delay-list.json"
+	access_key_id     = os.Getenv("AWS_ACCESS_KEY_ID")
+	secret_access_key = os.Getenv("AWS_SECRET_ACCESS_KEY")
 )
 
 /**
@@ -36,13 +38,17 @@ func Handler() {
 	}
 	defer jsonFile.Close()
 
-	// S3接続インスタンスの生成
-	credential := credentials.NewStaticCredentials("dummydummydummy", "dummydummydummy", "")
+	credential := credentials.NewStaticCredentials(access_key_id, secret_access_key, "")
 	sess := session.Must(session.NewSession(&aws.Config{
 		Credentials:      credential,
 		Endpoint:         aws.String("http://172.18.0.2:9000"),
 		S3ForcePathStyle: aws.Bool(true),
 	}))
+
+	_, err = sess.Config.Credentials.Get()
+	if err != nil {
+		log.Fatal("Load Credential File Error:  %+v\n", err)
+	}
 
 	// ファイルのアップロード
 	uploader := s3manager.NewUploader(sess)
