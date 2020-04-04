@@ -20,11 +20,9 @@ var (
 	key               = "delay-list.json"
 	access_key_id     = os.Getenv("AWS_ACCESS_KEY_ID")
 	secret_access_key = os.Getenv("AWS_SECRET_ACCESS_KEY")
+	endpoint          = aws.String("s3-ap-northeast-1.amazonaws.com")
 )
 
-/**
- * Lambda関数の入り口となる関数
- */
 func Handler() {
 	delayList := getDelayList()
 
@@ -38,19 +36,25 @@ func Handler() {
 	}
 	defer jsonFile.Close()
 
+	// Yield New Session
+	if os.Getenv("AWS_SAM_LOCAL") == "true" {
+		endpoint = aws.String("http://172.18.0.2:9000")
+	}
+
 	credential := credentials.NewStaticCredentials(access_key_id, secret_access_key, "")
-	sess := session.Must(session.NewSession(&aws.Config{
+	sess, err := session.NewSession(&aws.Config{
 		Credentials:      credential,
-		Endpoint:         aws.String("http://172.18.0.2:9000"),
+		Region:           aws.String("ap-northeast-1"),
+		Endpoint:         endpoint,
 		S3ForcePathStyle: aws.Bool(true),
-	}))
+	})
 
 	_, err = sess.Config.Credentials.Get()
 	if err != nil {
 		log.Fatal("Load Credential File Error:  %+v\n", err)
 	}
 
-	// ファイルのアップロード
+	// Upload File With Custom Session
 	uploader := s3manager.NewUploader(sess)
 	_, err = uploader.Upload(&s3manager.UploadInput{
 		Bucket: aws.String(bucketName),
@@ -65,7 +69,7 @@ func Handler() {
 }
 
 /**
- * 鉄道遅延情報提供ページより遅延リストを取得
+ * Fetch Delay List as a JSON File from Web site
  */
 func getDelayList() []byte {
 	resp, err := http.Get(url)
@@ -81,7 +85,7 @@ func getDelayList() []byte {
 }
 
 /**
- * tempディレクトリにJSONファイルを作成し、遅延リストを書き込む
+ * Create empty JSON file on temp file and write fetched delay-list
  */
 func createJSON(delayList []byte) error {
 	if delayList == nil {
@@ -102,7 +106,6 @@ func createJSON(delayList []byte) error {
 		return err
 	}
 
-	//ファイルの存在確認
 	if isExist := isExistTempFile(tempDir); isExist != true {
 		return fmt.Errorf("Temp file does not exist")
 	}

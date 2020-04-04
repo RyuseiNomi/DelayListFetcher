@@ -21,9 +21,9 @@ Resources:
         CatchAll:
           Type: Schedule
           Properties:
-            Schedule: rate(30 minutes)
-            Name: thirty-min-rule
-            Description: Fetch Delay-list each thirty-min
+            Schedule: rate(1 hour)
+            Name: one-hour-rule
+            Description: Fetch Delay-list each one-hour
             Enabled: true
       Environment:
         Variables:
