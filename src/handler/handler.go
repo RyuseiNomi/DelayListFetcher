@@ -12,8 +12,6 @@ import (
 )
 
 var (
-	url        = "https://tetsudo.rti-giken.jp/free/delay.json"
-	tempDir    = "/tmp/json/"
 	bucketName = "delay-list"
 	key        = "delay-list.json"
 )
