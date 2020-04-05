@@ -2,7 +2,6 @@ package JsonWorker
 
 import (
 	"fmt"
-	"log"
 	"os"
 )
 
@@ -17,7 +16,7 @@ var (
  */
 func CreateJSON(delayList []byte) error {
 	if delayList == nil {
-		return fmt.Errorf("nil bytes was given")
+		return fmt.Errorf("create JSON error: %s", "nil bytes was given")
 	}
 
 	if err := os.MkdirAll(tempDir, 0777); err != nil {
@@ -38,13 +37,9 @@ func CreateJSON(delayList []byte) error {
 		return fmt.Errorf("Temp file does not exist")
 	}
 
-	log.Printf("Success to create JSON File!")
 	return nil
 }
 
-/**
- * Verify if can create temp directory
- */
 func isExistTempFile(tempFile string) bool {
 	_, err := os.Stat(tempFile)
 	return !os.IsNotExist(err)
