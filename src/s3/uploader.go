@@ -10,10 +10,15 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 )
 
+var (
+	bucketName = "delay-list"
+	key        = "delay-list.json"
+)
+
 /**
  * Yield new session to upload file to S3 bucket
  */
-func GetUploader() *s3manager.Uploader {
+func Upload(jsonFile *os.File) error {
 
 	var sess *session.Session
 
@@ -41,7 +46,18 @@ func GetUploader() *s3manager.Uploader {
 		log.Fatal("Load Credential File Error:  %+v\n", err)
 	}
 
-	Uploader := s3manager.NewUploader(sess)
+	uploader := s3manager.NewUploader(sess)
 
-	return Uploader
+	// Upload File With Custom Session
+	_, err = uploader.Upload(&s3manager.UploadInput{
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(key),
+		Body:   jsonFile,
+	})
+	if err != nil {
+		return err
+	}
+
+	log.Printf("Succeeded to upload delay list!")
+	return nil
 }
