@@ -39,5 +39,6 @@ func GetUploader() *s3manager.Uploader {
 
 	Uploader := s3manager.NewUploader(sess)
 
+	log.Printf("Success to yield new session!")
 	return Uploader
 }
