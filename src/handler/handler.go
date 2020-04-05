@@ -7,20 +7,16 @@ import (
 	"net/http"
 	"os"
 
+	s3Uploader "github.com/RyuseiNomi/delay_reporter_lm/src/s3"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 )
 
 var (
-	url               = "https://tetsudo.rti-giken.jp/free/delay.json"
-	tempDir           = "/tmp/json/"
-	bucketName        = "delay-list"
-	key               = "delay-list.json"
-	access_key_id     = os.Getenv("AWS_ACCESS_KEY_ID")
-	secret_access_key = os.Getenv("AWS_SECRET_ACCESS_KEY")
-	endpoint          = aws.String("s3-ap-northeast-1.amazonaws.com")
+	url        = "https://tetsudo.rti-giken.jp/free/delay.json"
+	tempDir    = "/tmp/json/"
+	bucketName = "delay-list"
+	key        = "delay-list.json"
 )
 
 func Handler() {
@@ -36,26 +32,9 @@ func Handler() {
 	}
 	defer jsonFile.Close()
 
-	// Yield New Session
-	if os.Getenv("AWS_SAM_LOCAL") == "true" {
-		endpoint = aws.String("http://172.18.0.2:9000")
-	}
-
-	credential := credentials.NewStaticCredentials(access_key_id, secret_access_key, "")
-	sess, err := session.NewSession(&aws.Config{
-		Credentials:      credential,
-		Region:           aws.String("ap-northeast-1"),
-		Endpoint:         endpoint,
-		S3ForcePathStyle: aws.Bool(true),
-	})
-
-	_, err = sess.Config.Credentials.Get()
-	if err != nil {
-		log.Fatal("Load Credential File Error:  %+v\n", err)
-	}
+	uploader := s3Uploader.GetUploader()
 
 	// Upload File With Custom Session
-	uploader := s3manager.NewUploader(sess)
 	_, err = uploader.Upload(&s3manager.UploadInput{
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(key),
