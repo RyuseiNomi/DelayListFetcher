@@ -1,11 +1,10 @@
 package handler
 
 import (
-	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
 
+	urlFetcher "github.com/RyuseiNomi/delay_reporter_lm/src/fetcher"
 	jsonWorker "github.com/RyuseiNomi/delay_reporter_lm/src/json"
 	s3Uploader "github.com/RyuseiNomi/delay_reporter_lm/src/s3"
 	"github.com/aws/aws-sdk-go/aws"
@@ -20,7 +19,7 @@ var (
 )
 
 func Handler() {
-	delayList := getDelayList()
+	delayList := urlFetcher.GetDelayList()
 
 	if err := jsonWorker.CreateJSON(delayList); err != nil {
 		log.Fatal("Create JSON Error:  %+v\n", err)
@@ -45,20 +44,4 @@ func Handler() {
 	}
 
 	log.Printf("Success to upload delay list")
-}
-
-/**
- * Fetch Delay List as a JSON File from Web site
- */
-func getDelayList() []byte {
-	resp, err := http.Get(url)
-	if err != nil {
-		log.Fatal("Can not get delay list! Error: %v", err)
-	}
-	defer resp.Body.Close()
-
-	delayList, _ := ioutil.ReadAll(resp.Body)
-
-	log.Printf("Succeeded to get Delay-list!")
-	return delayList
 }
