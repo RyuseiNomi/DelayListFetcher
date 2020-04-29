@@ -1,77 +1,25 @@
 package JsonConverter
 
 import (
-	"encoding/csv"
 	"encoding/json"
-	"io"
-	"log"
-	"os"
+
+	tasks "github.com/RyuseiNomi/delay_reporter_lm/src/json/converter/tasks"
+	lists "github.com/RyuseiNomi/delay_reporter_lm/src/routeLists"
 )
 
-// URLより取得した遅延リスト
-type FetchedDelayList struct {
-	Name       string
-	Company    string
-	LastUpdate string
-	Source     string
-}
-
-// 全路線のマスターデータTSV
-type TrainRoutes []TrainRoute
-type TrainRoute struct {
-	Company   string
-	RouteName string
-	Region    string
-	isValid   string
-}
-
-// ステータスなどを追加した変換後の遅延リスト
-type ConvertedDelayLists []ConvertedDelayList
-type ConvertedDelayList struct {
-	Name    string
-	Company string
-	Region  string
-	Status  string
-	Source  string
-}
-
-func ConvertDelayList(delayList []byte) []byte {
+func ConvertDelayList(delayList []byte) ([]byte, error) {
 
 	// Unmarshal JSON bytes to Go Object
-	var fetchedDelayList []FetchedDelayList
+	var fetchedDelayList []lists.FetchedDelayList
 	json.Unmarshal(delayList, &fetchedDelayList)
 
-	// Read train route master tsv file
-	tsv, err := os.Open("/tmp/tsv/train.tsv")
+	trainRoutes, err := tasks.ReadAllTrainRouteFromTsv()
 	if err != nil {
-		log.Fatal("TSV Read Error:  %+v\n", err)
-	}
-	defer tsv.Close()
-
-	render := csv.NewReader(tsv)
-	render.Comma = '\t' // change delimiter
-
-	// Append all of train route
-	var trainRoutes TrainRoutes
-	for {
-		record, err := render.Read()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			log.Fatal("TSV Render Error:  %+v\n", err)
-		}
-		trainRoute := TrainRoute{
-			Company:   record[0],
-			RouteName: record[1],
-			Region:    record[2],
-			isValid:   record[3],
-		}
-		trainRoutes = append(trainRoutes, trainRoute)
+		return nil, err
 	}
 
 	// determine delay status each train route
-	var convertedDelayLists ConvertedDelayLists
+	var convertedDelayLists lists.ConvertedDelayLists
 	for _, trainRoute := range trainRoutes {
 		var status = "○"
 		for _, delayRoute := range fetchedDelayList {
@@ -79,7 +27,7 @@ func ConvertDelayList(delayList []byte) []byte {
 				status = "△"
 			}
 		}
-		convertedDelayList := ConvertedDelayList{
+		convertedDelayList := lists.ConvertedDelayList{
 			Name:    trainRoute.RouteName,
 			Company: trainRoute.Company,
 			Region:  trainRoute.Region,
@@ -92,5 +40,5 @@ func ConvertDelayList(delayList []byte) []byte {
 	// Marshal ConvertedDelayLists into bytes
 	bytes, _ := json.Marshal(convertedDelayLists)
 
-	return bytes
+	return bytes, nil
 }
