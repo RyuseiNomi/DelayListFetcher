@@ -42,3 +42,26 @@ func ReadAllTrainRouteFromTsv() (lists.TrainRoutes, error) {
 
 	return trainRoutes, nil
 }
+
+func ConvertDelayLists(fetchedDelayList []lists.FetchedDelayList, trainRoutes lists.TrainRoutes) lists.ConvertedDelayLists {
+	// determine delay status each train route
+	var convertedDelayLists lists.ConvertedDelayLists
+	for _, trainRoute := range trainRoutes {
+		var status = "○"
+		for _, delayRoute := range fetchedDelayList {
+			if delayRoute.Name == trainRoute.RouteName {
+				status = "△"
+			}
+		}
+		convertedDelayList := lists.ConvertedDelayList{
+			Name:    trainRoute.RouteName,
+			Company: trainRoute.Company,
+			Region:  trainRoute.Region,
+			Status:  status,
+			Source:  "鉄道com RSS",
+		}
+		convertedDelayLists = append(convertedDelayLists, convertedDelayList)
+	}
+
+	return convertedDelayLists
+}

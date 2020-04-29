@@ -18,24 +18,7 @@ func ConvertDelayList(delayList []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	// determine delay status each train route
-	var convertedDelayLists lists.ConvertedDelayLists
-	for _, trainRoute := range trainRoutes {
-		var status = "○"
-		for _, delayRoute := range fetchedDelayList {
-			if delayRoute.Name == trainRoute.RouteName {
-				status = "△"
-			}
-		}
-		convertedDelayList := lists.ConvertedDelayList{
-			Name:    trainRoute.RouteName,
-			Company: trainRoute.Company,
-			Region:  trainRoute.Region,
-			Status:  status,
-			Source:  "鉄道com RSS",
-		}
-		convertedDelayLists = append(convertedDelayLists, convertedDelayList)
-	}
+	convertedDelayLists := tasks.ConvertDelayLists(fetchedDelayList, trainRoutes)
 
 	// Marshal ConvertedDelayLists into bytes
 	bytes, _ := json.Marshal(convertedDelayLists)
