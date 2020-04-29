@@ -6,11 +6,16 @@ import (
 
 	urlFetcher "github.com/RyuseiNomi/delay_reporter_lm/src/fetcher"
 	jsonWorker "github.com/RyuseiNomi/delay_reporter_lm/src/json"
-	s3Uploader "github.com/RyuseiNomi/delay_reporter_lm/src/s3"
+	jsonConverter "github.com/RyuseiNomi/delay_reporter_lm/src/json/converter"
+	s3Worker "github.com/RyuseiNomi/delay_reporter_lm/src/s3"
 )
 
 func Handler() {
 	delayList := urlFetcher.GetDelayList()
+
+	s3Worker.DownloadTrainMaster()
+
+	jsonConverter.ConvertDelayList(delayList)
 
 	if err := jsonWorker.CreateJSON(delayList); err != nil {
 		log.Fatal("Create JSON Error:  %+v\n", err)
@@ -22,7 +27,7 @@ func Handler() {
 	}
 	defer jsonFile.Close()
 
-	if err = s3Uploader.Upload(jsonFile); err != nil {
+	if err = s3Worker.Upload(jsonFile); err != nil {
 		log.Fatal("Upload JSON Error:  %+v\n", err)
 	}
 

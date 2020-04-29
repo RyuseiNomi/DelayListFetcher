@@ -7,21 +7,21 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 )
 
 var (
-	uploadBucket   = "delay-list"
-	uploadFileName = "delay-list.json"
+	downloadTargetBucket = "delay-list"
+	tsvTempDir           = "/tmp/tsv/"
+	downloadFileName     = "train.tsv"
 )
 
-/**
- * Yield new session to upload file to S3 bucket
- */
-func Upload(jsonFile *os.File) error {
+func DownloadTrainMaster() error {
 
 	var sess *session.Session
 
+	// TODO Credential取得の処理を共通化
 	if os.Getenv("AWS_SAM_LOCAL") == "true" {
 		/* Yield credential for local */
 		log.Printf("Start process getting credential as a local")
@@ -46,18 +46,21 @@ func Upload(jsonFile *os.File) error {
 		log.Fatal("Load Credential File Error:  %+v\n", err)
 	}
 
-	uploader := s3manager.NewUploader(sess)
+	if err := os.MkdirAll(tsvTempDir, 0777); err != nil {
+		return err
+	}
+	file, err := os.Create(tsvTempDir + downloadFileName)
+	defer file.Close()
 
-	// Upload File With Custom Session
-	_, err = uploader.Upload(&s3manager.UploadInput{
-		Bucket: aws.String(uploadBucket),
-		Key:    aws.String(uploadFileName),
-		Body:   jsonFile,
+	downloader := s3manager.NewDownloader(sess)
+	tsvFile, err := downloader.Download(file, &s3.GetObjectInput{
+		Bucket: aws.String(downloadTargetBucket),
+		Key:    aws.String(downloadFileName),
 	})
 	if err != nil {
 		return err
 	}
 
-	log.Printf("Succeeded to upload delay list!")
+	log.Printf("Succeeded to download train master!: %d byte", tsvFile)
 	return nil
 }
