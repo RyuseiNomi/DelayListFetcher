@@ -18,13 +18,15 @@ type FetchedDelayList struct {
 }
 
 // 全路線のマスターデータTSV
-type TrainRoutes struct {
-	Company   []string
-	RouteName []string
-	Region    []string
-	isValid   []string
+type TrainRoutes []TrainRoute
+type TrainRoute struct {
+	Company   string
+	RouteName string
+	Region    string
+	isValid   string
 }
 
+// ステータスなどを追加した変換後の遅延リスト
 type ConvertedDelayList struct {
 	Name    string
 	Company string
@@ -32,14 +34,6 @@ type ConvertedDelayList struct {
 	Status  string
 	Source  string
 }
-
-//type JsonConvertWorker struct {
-//	DelayList FetchedDelayList
-//}
-//
-//func newJsonConvertWorker(delayList []byte) FetchedDelayList {
-//
-//}
 
 func ConvertDelayList(delayList []byte) {
 
@@ -55,7 +49,10 @@ func ConvertDelayList(delayList []byte) {
 	defer tsv.Close()
 
 	render := csv.NewReader(tsv)
+	render.Comma = '\t' // change delimiter
 
+	// Append all of train route
+	var trainRoutes TrainRoutes
 	for {
 		record, err := render.Read()
 		if err == io.EOF {
@@ -64,6 +61,14 @@ func ConvertDelayList(delayList []byte) {
 		if err != nil {
 			log.Fatal("TSV Render Error:  %+v\n", err)
 		}
-		fmt.Println(record)
+		trainRoute := TrainRoute{
+			Company:   record[0],
+			RouteName: record[1],
+			Region:    record[2],
+			isValid:   record[3],
+		}
+		trainRoutes = append(trainRoutes, trainRoute)
 	}
+	fmt.Println(trainRoutes)
+	fmt.Println(fetchedDelayList)
 }
