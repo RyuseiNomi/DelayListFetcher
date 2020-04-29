@@ -27,6 +27,7 @@ type TrainRoute struct {
 }
 
 // ステータスなどを追加した変換後の遅延リスト
+type ConvertedDelayLists []ConvertedDelayList
 type ConvertedDelayList struct {
 	Name    string
 	Company string
@@ -69,6 +70,24 @@ func ConvertDelayList(delayList []byte) {
 		}
 		trainRoutes = append(trainRoutes, trainRoute)
 	}
-	fmt.Println(trainRoutes)
-	fmt.Println(fetchedDelayList)
+
+	// determine delay status each train route
+	var convertedDelayLists ConvertedDelayLists
+	for _, trainRoute := range trainRoutes {
+		var status = "○"
+		for _, delayRoute := range fetchedDelayList {
+			if delayRoute.Name == trainRoute.RouteName {
+				status = "△"
+			}
+		}
+		convertedDelayList := ConvertedDelayList{
+			Name:    trainRoute.RouteName,
+			Company: trainRoute.Company,
+			Region:  trainRoute.Region,
+			Status:  status,
+			Source:  "鉄道com RSS",
+		}
+		convertedDelayLists = append(convertedDelayLists, convertedDelayList)
+	}
+	fmt.Println(convertedDelayLists)
 }
