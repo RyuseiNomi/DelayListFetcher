@@ -4,6 +4,8 @@
 
 This is a lambda function which can fetch train-delay-list from [鉄道遅延情報のJSON](<https://rti-giken.jp/fhc/api/train_tetsudo/>) and put to S3 bucket.
 
+This function mainly fetch delay-list and convert the JSON to contain all of train route name and each status.
+
 The information is used in [遅れトレイン](<https://train-delay-reporter.netlify.com/>)
 
 Below is a brief explanation of what we have generated for you:
@@ -23,6 +25,17 @@ Below is a brief explanation of what we have generated for you:
 * [Docker installed](https://www.docker.com/community-edition)
 * [Golang](https://golang.org)
 * [Minio](<https://min.io/>)
+
+## Overall flow
+
+The function basicly consist of four process.
+
+1. Fetch a JSON data from [鉄道遅延情報のJSON](<https://rti-giken.jp/fhc/api/train_tetsudo/>) and unmarshal it to Go object.
+2. Read tsv data which contain all of train route name and region and convert to Go object. It also obtain from [鉄道遅延情報のJSON](<https://rti-giken.jp/fhc/api/train_tetsudo/>).
+3. Convert two Go object and create new Go object which convert to use each application easily.
+4. Finally, marshal the Go object and create JSON file and upload it to S3 bucket.
+
+![overallFlow](./assets/overall_flow.png)
 
 ## Setup process
 
