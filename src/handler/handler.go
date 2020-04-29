@@ -13,7 +13,12 @@ import (
 func Handler() {
 	delayList := urlFetcher.GetDelayList()
 
-	s3Worker.DownloadTrainMaster()
+	sess, err := s3Worker.GetCredential()
+	if err != nil {
+		log.Fatal("Load Credential File Error:  %+v\n", err)
+	}
+
+	s3Worker.DownloadTrainMaster(sess)
 
 	convertedDelayList := jsonConverter.ConvertDelayList(delayList)
 
@@ -27,7 +32,7 @@ func Handler() {
 	}
 	defer jsonFile.Close()
 
-	if err = s3Worker.Upload(jsonFile); err != nil {
+	if err = s3Worker.Upload(jsonFile, sess); err != nil {
 		log.Fatal("Upload JSON Error:  %+v\n", err)
 	}
 
