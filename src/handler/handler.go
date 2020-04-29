@@ -6,13 +6,26 @@ import (
 
 	urlFetcher "github.com/RyuseiNomi/delay_reporter_lm/src/fetcher"
 	jsonWorker "github.com/RyuseiNomi/delay_reporter_lm/src/json"
-	s3Uploader "github.com/RyuseiNomi/delay_reporter_lm/src/s3"
+	jsonConverter "github.com/RyuseiNomi/delay_reporter_lm/src/json/converter"
+	s3Worker "github.com/RyuseiNomi/delay_reporter_lm/src/s3"
 )
 
 func Handler() {
 	delayList := urlFetcher.GetDelayList()
 
-	if err := jsonWorker.CreateJSON(delayList); err != nil {
+	sess, err := s3Worker.GetCredential()
+	if err != nil {
+		log.Fatal("Load Credential File Error:  %+v\n", err)
+	}
+
+	s3Worker.DownloadTrainMaster(sess)
+
+	convertedDelayList, err := jsonConverter.ConvertDelayList(delayList)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := jsonWorker.CreateJSON(convertedDelayList); err != nil {
 		log.Fatal("Create JSON Error:  %+v\n", err)
 	}
 
@@ -22,7 +35,7 @@ func Handler() {
 	}
 	defer jsonFile.Close()
 
-	if err = s3Uploader.Upload(jsonFile); err != nil {
+	if err = s3Worker.Upload(jsonFile, sess); err != nil {
 		log.Fatal("Upload JSON Error:  %+v\n", err)
 	}
 
