@@ -3,7 +3,6 @@ package JsonConverter
 import (
 	"encoding/csv"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"os"
@@ -36,7 +35,7 @@ type ConvertedDelayList struct {
 	Source  string
 }
 
-func ConvertDelayList(delayList []byte) {
+func ConvertDelayList(delayList []byte) []byte {
 
 	// Unmarshal JSON bytes to Go Object
 	var fetchedDelayList []FetchedDelayList
@@ -89,5 +88,9 @@ func ConvertDelayList(delayList []byte) {
 		}
 		convertedDelayLists = append(convertedDelayLists, convertedDelayList)
 	}
-	fmt.Println(convertedDelayLists)
+
+	// Marshal ConvertedDelayLists into bytes
+	bytes, _ := json.Marshal(convertedDelayLists)
+
+	return bytes
 }

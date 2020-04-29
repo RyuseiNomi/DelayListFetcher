@@ -15,9 +15,9 @@ func Handler() {
 
 	s3Worker.DownloadTrainMaster()
 
-	jsonConverter.ConvertDelayList(delayList)
+	convertedDelayList := jsonConverter.ConvertDelayList(delayList)
 
-	if err := jsonWorker.CreateJSON(delayList); err != nil {
+	if err := jsonWorker.CreateJSON(convertedDelayList); err != nil {
 		log.Fatal("Create JSON Error:  %+v\n", err)
 	}
 
